@@ -104,9 +104,10 @@
             // 
             // txtValue
             // 
+            this.txtValue.Font = new System.Drawing.Font("Roboto", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.txtValue.Location = new System.Drawing.Point(965, 837);
             this.txtValue.Name = "txtValue";
-            this.txtValue.Size = new System.Drawing.Size(295, 26);
+            this.txtValue.Size = new System.Drawing.Size(443, 32);
             this.txtValue.TabIndex = 9;
             // 
             // BtnGenerate
@@ -114,7 +115,7 @@
             this.BtnGenerate.Font = new System.Drawing.Font("Roboto", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.BtnGenerate.Location = new System.Drawing.Point(394, 893);
             this.BtnGenerate.Name = "BtnGenerate";
-            this.BtnGenerate.Size = new System.Drawing.Size(866, 50);
+            this.BtnGenerate.Size = new System.Drawing.Size(1014, 50);
             this.BtnGenerate.TabIndex = 10;
             this.BtnGenerate.Text = "Generate Style and Copy";
             this.BtnGenerate.UseVisualStyleBackColor = true;
@@ -142,17 +143,19 @@
             // 
             // txtStyle
             // 
+            this.txtStyle.Font = new System.Drawing.Font("Roboto", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.txtStyle.Location = new System.Drawing.Point(394, 966);
             this.txtStyle.Name = "txtStyle";
-            this.txtStyle.Size = new System.Drawing.Size(866, 26);
+            this.txtStyle.Size = new System.Drawing.Size(1022, 36);
             this.txtStyle.TabIndex = 13;
             // 
             // cbSetter
             // 
+            this.cbSetter.Font = new System.Drawing.Font("Roboto", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cbSetter.FormattingEnabled = true;
             this.cbSetter.Location = new System.Drawing.Point(394, 837);
             this.cbSetter.Name = "cbSetter";
-            this.cbSetter.Size = new System.Drawing.Size(501, 28);
+            this.cbSetter.Size = new System.Drawing.Size(501, 32);
             this.cbSetter.TabIndex = 14;
             // 
             // StyleConverterForm

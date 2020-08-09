@@ -20,6 +20,16 @@ namespace StyleConverterApp
         public StyleConverterForm()
         {
             InitializeComponent();
+
+            cbSetter.Items.Add("android:textSize");
+            cbSetter.Items.Add("android:textStyle");
+            cbSetter.Items.Add("android:letterSpacing");
+            cbSetter.Items.Add("android:lineSpacingMultiplier");
+            cbSetter.Items.Add("android:height");
+            cbSetter.Items.Add("android:fontFamily");
+            cbSetter.Items.Add("android:textColor");
+            cbSetter.Items.Add("android:width");
+ 
         }
 
         private void BtnConvert_Click(object sender, EventArgs e)
@@ -151,8 +161,9 @@ namespace StyleConverterApp
 
         private void BtnGenerate_Click(object sender, EventArgs e)
         {
-            string property = GetProperty(txtProperty.Text);
-            string value = GetValue(txtValue.Text, txtProperty.Text);
+            string prp = cbSetter.SelectedItem.ToString();
+            string property = GetProperty(prp);
+            string value = GetValue(txtValue.Text, prp);
 
             txtStyle.Text = GetStyleString(new StyleSetter() { Property = property, Value = value });
             Clipboard.SetText(txtStyle.Text);

@@ -8,6 +8,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
@@ -29,51 +30,113 @@ namespace StyleConverterApp
             cbSetter.Items.Add("android:fontFamily");
             cbSetter.Items.Add("android:textColor");
             cbSetter.Items.Add("android:width");
- 
         }
 
         private void BtnConvert_Click(object sender, EventArgs e)
         {
-
-            XmlSerializer serializer = new XmlSerializer(typeof(style));
-            style androidStyle;
-            var sourceStyle = rtbFrom.Text;
-            using (TextReader reader = new StringReader(sourceStyle))
-            {
-                androidStyle = (style)serializer.Deserialize(reader);
-            }
-            string key = androidStyle.name;
+            bool isAndroidStyle = false;
+            var sourceStyle = Regex.Replace(rtbFrom.Text, @"\t|\n|\r", "").Trim();
+            string key = "";
             string targetType = "";
-            switch (androidStyle.parent)
-            {
-                case "@style/Text":
-                    targetType = "Label";
-                    break;
-                default:
-                    break;
-            }
-            Style xamarinFormsStyle = new Style()
-            {
-                Key = key,
-                TargetType = targetType
-            };
+            Style xamarinFormsStyle;
 
-            if (androidStyle.item?.Length > 0)
+            if (isAndroidStyle = sourceStyle.ToLower().StartsWith("<style"))
             {
-                var setters = new List<StyleSetter>();
-                foreach (var item in androidStyle.item)
+                XmlSerializer serializer = new XmlSerializer(typeof(style));
+                style androidStyle;
+
+                using (TextReader reader = new StringReader(sourceStyle))
                 {
-                    setters.Add(new StyleSetter()
-                    {
-                        Property = GetProperty(item.name),
-                        Value = GetValue(item.Value, item.name)
-                    });
+                    androidStyle = (style)serializer.Deserialize(reader);
                 }
-                xamarinFormsStyle.Setter = setters.ToArray();
+                key = androidStyle.name;
+                switch (androidStyle.parent)
+                {
+                    case "@style/Text":
+                        targetType = "Label";
+                        break;
+                    default:
+                        break;
+                }
+
+                xamarinFormsStyle = new Style()
+                {
+                    Key = txtName.Text.Length > 0 ? txtName.Text : key,
+                    TargetType = targetType
+                };
+
+                if (androidStyle.item?.Length > 0)
+                {
+                    var setters = new List<StyleSetter>();
+                    foreach (var item in androidStyle.item)
+                    {
+                        setters.Add(new StyleSetter()
+                        {
+                            Property = GetProperty(item.name),
+                            Value = GetValue(item.Value, item.name)
+                        });
+                    }
+                    xamarinFormsStyle.Setter = setters.ToArray();
+                }
+
+            }
+            else
+            {
+                xamarinFormsStyle = new Style()
+                {
+                    Key = txtName.Text.Length > 0 ? txtName.Text : key,
+                    TargetType = targetType
+                };
+
+                var keys = new string[] { "x:name", "text =", "text=", "command" };
+
+                var items = sourceStyle.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (items?.Length > 0)
+                {
+                    var setters = new List<StyleSetter>();
+                    foreach (var itemRaw in items)
+                    {
+                        var item = itemRaw;
+                        if (item.StartsWith("<") && !item.Contains(".") && !item.Contains("/") && !item.Contains("Gesture"))
+                        {
+                            targetType = item.Remove(0, 1);
+                            xamarinFormsStyle.TargetType = targetType;
+                            if (string.IsNullOrWhiteSpace(xamarinFormsStyle.Key))
+                            {
+                                xamarinFormsStyle.Key = targetType + "Style";
+                            }
+                        }
+                        else
+                        {
+                            if (!item.Contains("=") || keys.Any(k => item.ToLower().Contains(k)))
+                                continue;
+
+                            if (item.Contains("DynamicResource") || item.Contains("StaticResource"))
+                            {
+                                item = item + " " + items[items.ToList().IndexOf(item) + 1];
+                            }
+                            var styleItems = item.Split(new char[] { '=' }, StringSplitOptions.RemoveEmptyEntries);
+                            string property = styleItems[0].Trim();
+                             
+                            string value = styleItems[1].Replace("\"", string.Empty).Replace(">", string.Empty)
+                                .Replace("/", string.Empty).Trim();
+
+                            setters.Add(new StyleSetter()
+                            {
+                                Property = Regex.Replace(property, @"\t|\n|\r", "").Trim(),
+                                Value = Regex.Replace(value, @"\t|\n|\r", "").Trim(),
+                            });
+                            
+                            sourceStyle = sourceStyle.Replace(item.Replace(">", string.Empty), string.Empty);
+                        }
+                    }
+                    xamarinFormsStyle.Setter = setters.ToArray();
+                }
             }
 
             string result = GetStyleString<Style>(xamarinFormsStyle);
-
+            result += Environment.NewLine + Environment.NewLine;
+            result += isAndroidStyle ? $"<{targetType} Style=\"{{StaticResource {xamarinFormsStyle.Key}}}\"  />" : Regex.Replace(sourceStyle, @"\t|\n|\r", "").Trim(); ;
             rtbTo.Text = result;
         }
 
@@ -91,7 +154,6 @@ namespace StyleConverterApp
             using (StringWriter sw = new StringWriter())
             using (XmlWriter writer = XmlWriter.Create(sw, settings))
             {
-
                 xFserializer.Serialize(sw, xamarinFormsStyle, nameSpaces);
                 result = sw.ToString();
             }

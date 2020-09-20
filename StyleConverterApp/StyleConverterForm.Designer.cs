@@ -40,6 +40,8 @@
             this.label4 = new System.Windows.Forms.Label();
             this.txtStyle = new System.Windows.Forms.TextBox();
             this.cbSetter = new System.Windows.Forms.ComboBox();
+            this.txtName = new System.Windows.Forms.TextBox();
+            this.label5 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label1
@@ -158,11 +160,29 @@
             this.cbSetter.Size = new System.Drawing.Size(501, 32);
             this.cbSetter.TabIndex = 14;
             // 
+            // txtName
+            // 
+            this.txtName.Location = new System.Drawing.Point(1167, 89);
+            this.txtName.Name = "txtName";
+            this.txtName.Size = new System.Drawing.Size(411, 26);
+            this.txtName.TabIndex = 15;
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(1163, 50);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(90, 20);
+            this.label5.TabIndex = 16;
+            this.label5.Text = "Style Name";
+            // 
             // StyleConverterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1661, 1074);
+            this.ClientSize = new System.Drawing.Size(1661, 1050);
+            this.Controls.Add(this.label5);
+            this.Controls.Add(this.txtName);
             this.Controls.Add(this.cbSetter);
             this.Controls.Add(this.txtStyle);
             this.Controls.Add(this.label4);
@@ -196,5 +216,7 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TextBox txtStyle;
         private System.Windows.Forms.ComboBox cbSetter;
+        private System.Windows.Forms.TextBox txtName;
+        private System.Windows.Forms.Label label5;
     }
 }

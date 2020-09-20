@@ -67,6 +67,7 @@ namespace StyleConverterApp.Models
 
     /// <remarks/>
     [System.SerializableAttribute()]
+    [System.Xml.Serialization.XmlRoot("Setter")]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
     public partial class StyleSetter

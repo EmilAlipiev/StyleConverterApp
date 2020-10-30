@@ -36,7 +36,7 @@ namespace StyleConverterApp
         private void BtnConvert_Click(object sender, EventArgs e)
         {
             bool isAndroidStyle = false;
-            var sourceStyle = Regex.Replace(rtbFrom.Text, @"\t|\n|\r", "").Trim();
+            string sourceStyle = RemoveSpacesTabsNewLines(rtbFrom.Text);
             string key = "";
             string targetType = "";
 
@@ -83,13 +83,9 @@ namespace StyleConverterApp
             }
             else
             {
-                xamarinFormsStyle = new Style()
-                {
-                    Key = txtName.Text.Length > 0 ? txtName.Text : key,
-                    TargetType = targetType
-                };
+                xamarinFormsStyle = new Style();
 
-                var keys = new string[] { "x:name", "text =", "text=", "command", "grid", "absolutelayout" };
+                var keys = new string[] { "x:name", "text =", "text=", "command", "grid.", "absolutelayout." };
 
 
                 var items = sourceStyle.Split(new[] { "\"  " }, StringSplitOptions.RemoveEmptyEntries);
@@ -99,50 +95,30 @@ namespace StyleConverterApp
                     var setters = new List<StyleSetter>();
                     foreach (var itemRaw in items)
                     {
-                        var item = itemRaw.Contains("\"") ? itemRaw.Trim() + "\"" : itemRaw.Trim();
-                        if (item.StartsWith("<") && !item.Contains(".") && !item.Contains("/") &&
-                            !item.Contains("Gesture"))
+                        var item = RemoveSpacesTabsNewLines(itemRaw);
+                        item = item.Contains("\"") ? item.Trim() + "\"" : item.Trim();
+
+                        if (item.StartsWith("<") && !item.Contains(".") && !item.Contains("/") && !item.Contains("Gesture"))
                         {
-                            targetType = GetTargetType(xamarinFormsStyle, item);
+                            targetType = GetTargetType(xamarinFormsStyle, item, out string firstStyle);
+                            if (firstStyle.Length > 0)
+                            {
+                                GetStyleSource(ref sourceStyle, ref setters, firstStyle);
+                            }
                         }
                         else
                         {
                             if (!item.Contains("=") || keys.Any(k => item.ToLower().Contains(k)))
                                 continue;
 
-                           // var values = new string[] { "DynamicResource", "StaticResource", "OnIdiom", "OnPlatform" };
+                            // var values = new string[] { "DynamicResource", "StaticResource", "OnIdiom", "OnPlatform" };
 
                             //if (values.Any(k => item.Contains(k)))
                             //{
                             //    item = item + " " + items[items.ToList().IndexOf(item) + 1];
                             //}
 
-                            var valueItems = new string[2];
-                            var styleItems = item.Split(new char[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries);
-                            if (styleItems.Length > 2)
-                            {
-                                valueItems[0] = styleItems[0];
-                                for (int i = 1; i < styleItems.Length; i++)
-                                {
-                                    valueItems[1] += styleItems[i];
-                                }
-                            }
-                            else
-                            {
-                                valueItems = styleItems;
-                            }
-                            string property = valueItems[0].Trim();
-
-                            string value = valueItems[1].Replace("\"", string.Empty).Replace(">", string.Empty)
-                                .Replace("/", string.Empty).Trim();
-
-                            setters.Add(new StyleSetter()
-                            {
-                                Property = Regex.Replace(property, @"\t|\n|\r", "").Trim(),
-                                Value = Regex.Replace(value, @"\t|\n|\r", "").Trim(),
-                            });
-                            item = item.Replace("/>", string.Empty).Replace(">", string.Empty).Replace("\" \"","\"");
-                            sourceStyle = sourceStyle.Replace(item, string.Empty);
+                            GetStyleSource(ref sourceStyle, ref setters, item);
                         }
                     }
                     xamarinFormsStyle.Setter = setters.ToArray();
@@ -150,8 +126,7 @@ namespace StyleConverterApp
             }
 
             sourceStyle = sourceStyle.Insert(1 + targetType.Length, $" Style=\"{{StaticResource {xamarinFormsStyle.Key}}}\"");
-            const string reduceMultiSpace = @"[ ]{2,}";
-            sourceStyle = Regex.Replace(sourceStyle.Replace("\t", " "), reduceMultiSpace, " ");
+            sourceStyle = RemoveMultiSpaces(sourceStyle);
 
             string result = GetStyleString<Style>(xamarinFormsStyle);
             result += Environment.NewLine + Environment.NewLine;
@@ -159,29 +134,92 @@ namespace StyleConverterApp
             rtbTo.Text = result;
         }
 
-        private static string GetTargetType(Style xamarinFormsStyle, string item)
+        private void GetStyleSource(ref string sourceStyle, ref List<StyleSetter> setters, string item)
+        {
+            var valueItems = new string[2];
+            var styleItems = item.Split(new char[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries);
+            if (styleItems.Length > 2)
+            {
+                valueItems[0] = styleItems[0];
+                for (int i = 1; i < styleItems.Length; i++)
+                {
+                    valueItems[1] += styleItems[i];
+                }
+            }
+            else
+            {
+                valueItems = styleItems;
+            }
+            string property = valueItems[0].Trim();
+
+            string value = CleanItemFromTags(valueItems[1]);
+
+            setters.Add(GetSetter(property, value));
+
+            item = CleanItemFromTags(item);
+            sourceStyle = sourceStyle.Replace(item, string.Empty);
+        }
+
+        private StyleSetter GetSetter(string property, string value)
+        {
+            return new StyleSetter()
+            {
+                Property = RemoveMultiSpaces(RemoveSpacesTabsNewLines(property)).Replace("\"", ""),
+                Value = RemoveMultiSpaces(RemoveSpacesTabsNewLines(value)).Replace("\"", "")
+            };
+        }
+
+        private static string RemoveMultiSpaces(string text)
+        {
+            const string reduceMultiSpace = @"[ ]{2,}";
+            text = Regex.Replace(text.Replace("\t", " "), reduceMultiSpace, " ");
+            return text;
+        }
+
+        private string RemoveSpacesTabsNewLines(string text)
+        {
+            return Regex.Replace(text, @"\t|\n|\r", "").Trim();
+        }
+
+        private string CleanItemFromTags(string item)
+        {
+            item = item.Replace("/>", string.Empty).Replace(">", string.Empty).Replace("\" \"", "\"");
+            return item;
+        }
+
+        private string GetTargetType(Style xamarinFormsStyle, string item, out string firstStyle)
         {
             string targetType;
             var targeTypes = item.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
             targetType = targeTypes[0].Remove(0, 1);
+
             xamarinFormsStyle.TargetType = targetType;
-            if (targeTypes.Length > 1)
+            xamarinFormsStyle.Key = targetType.Replace(":", "") + "Style";
+            firstStyle = "";
+            if (txtName.Text.Length > 0)
             {
-                var nameTypes = targeTypes[1].Split(new[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries);
-                if (nameTypes[0] == "x:Name" && nameTypes.Length > 1)
-                {
-                    xamarinFormsStyle.Key = nameTypes[1].Replace("\"", string.Empty) + "Style";
-                }
+                xamarinFormsStyle.Key = txtName.Text;
             }
-            if (string.IsNullOrWhiteSpace(xamarinFormsStyle.Key))
+            else
             {
-                xamarinFormsStyle.Key = targetType + "Style";
+                if (targeTypes.Length > 1)
+                {
+                    var nameTypes = targeTypes[1].Split(new[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                    if (nameTypes[0] == "x:Name" && nameTypes.Length > 1)
+                    {
+                        xamarinFormsStyle.Key = nameTypes[1].Replace("\"", string.Empty) + "Style";
+                    }
+                    else
+                    {
+                        firstStyle = targeTypes[1];
+                    }
+                }
             }
 
             return targetType;
         }
 
-        private static string GetStyleString<T>(T xamarinFormsStyle)
+        private string GetStyleString<T>(T xamarinFormsStyle)
         {
             XmlSerializer xFserializer = new XmlSerializer(typeof(T));
             var nameSpaces = new XmlSerializerNamespaces(new[] { XmlQualifiedName.Empty });

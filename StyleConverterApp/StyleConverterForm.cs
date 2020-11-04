@@ -98,28 +98,31 @@ namespace StyleConverterApp
                         var item = RemoveSpacesTabsNewLines(itemRaw);
                         item = item.Contains("\"") ? item.Trim() + "\"" : item.Trim();
 
-                        if (item.StartsWith("<") && !item.Contains(".") && !item.Contains("/") && !item.Contains("Gesture"))
+                        int indexEmpty = item.IndexOf(' ');
+                        int indexParantheses = item.IndexOf('{');
+                        if (indexEmpty > 0) // has space
                         {
-                            targetType = GetTargetType(xamarinFormsStyle, item, out string firstStyle);
-                            if (firstStyle.Length > 0)
+                            if (indexParantheses > 0)
                             {
-                                GetStyleSource(ref sourceStyle, ref setters, firstStyle);
+                                if (indexParantheses < indexEmpty)
+                                {
+                                    targetType = GetTargetTypeAndSetters(item, keys, ref setters);
+                                }
+                                else
+                                {
+                                    GetSubItems(keys, ref setters, item);
+                                }
+                            }
+                            else
+                            {
+                                GetSubItems(keys, ref setters, item);
                             }
                         }
                         else
                         {
-                            if (!item.Contains("=") || keys.Any(k => item.ToLower().Contains(k)))
-                                continue;
-
-                            // var values = new string[] { "DynamicResource", "StaticResource", "OnIdiom", "OnPlatform" };
-
-                            //if (values.Any(k => item.Contains(k)))
-                            //{
-                            //    item = item + " " + items[items.ToList().IndexOf(item) + 1];
-                            //}
-
-                            GetStyleSource(ref sourceStyle, ref setters, item);
+                            targetType = GetTargetTypeAndSetters(item, keys, ref setters);
                         }
+
                     }
                     xamarinFormsStyle.Setter = setters.ToArray();
                 }
@@ -132,6 +135,43 @@ namespace StyleConverterApp
             result += Environment.NewLine + Environment.NewLine;
             result += isAndroidStyle ? $"<{targetType} Style=\"{{StaticResource {xamarinFormsStyle.Key}}}\"  />" : Regex.Replace(sourceStyle, @"\\t|\\n|\\r", "").Trim();
             rtbTo.Text = result;
+
+            string GetTargetTypeAndSetters(string item, string[] keys, ref List<StyleSetter> setters)
+            {
+                if (item.StartsWith("<") && !item.Contains(".") && !item.Contains("/") && !item.Contains("Gesture"))
+                {
+                    targetType = GetTargetType(xamarinFormsStyle, item, out string firstStyle);
+                    if (firstStyle.Length > 0)
+                    {
+                        GetStyleSource(ref sourceStyle, ref setters, firstStyle);
+                    }
+                }
+                else
+                {
+                    if (!item.Contains("=") || keys.Any(k => item.ToLower().Contains(k)))
+                        return targetType;
+
+                    // var values = new string[] { "DynamicResource", "StaticResource", "OnIdiom", "OnPlatform" };
+
+                    //if (values.Any(k => item.Contains(k)))
+                    //{
+                    //    item = item + " " + items[items.ToList().IndexOf(item) + 1];
+                    //}
+
+                    GetStyleSource(ref sourceStyle, ref setters, item);
+                }
+
+                return targetType;
+            }
+
+            void GetSubItems(string[] keys, ref List<StyleSetter> setters, string item)
+            {
+                var subItems = item.Split(new[] { " " }, 2, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var subItem in subItems)
+                {
+                    targetType = GetTargetTypeAndSetters(subItem, keys, ref setters);
+                }
+            }
         }
 
         private void GetStyleSource(ref string sourceStyle, ref List<StyleSetter> setters, string item)

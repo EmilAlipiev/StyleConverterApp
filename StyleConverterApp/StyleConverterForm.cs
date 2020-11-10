@@ -85,7 +85,7 @@ namespace StyleConverterApp
             {
                 xamarinFormsStyle = new Style();
 
-                var keys = new string[] { "x:name", "text =", "text=", "command", "grid.", "absolutelayout." };
+                var keys = new string[] { "x:name", "text =", "text=", "binding", "command", "grid.", "absolutelayout.", "itemsource", "toggled", "istoggled", "focused", "definitions" };
 
 
                 var items = sourceStyle.Split(new[] { "\"  " }, StringSplitOptions.RemoveEmptyEntries);
@@ -93,7 +93,7 @@ namespace StyleConverterApp
                 if (items?.Length > 0)
                 {
                     var setters = new List<StyleSetter>();
-                    foreach (var itemRaw in items)
+                    foreach (var itemRaw in items) //Splited list by " space
                     {
                         var item = RemoveSpacesTabsNewLines(itemRaw);
                         item = item.Contains("\"") ? item.Trim() + "\"" : item.Trim();
@@ -146,6 +146,17 @@ namespace StyleConverterApp
                         GetStyleSource(ref sourceStyle, ref setters, firstStyle);
                     }
                 }
+                else if (item.Contains("Style"))
+                {
+                    var nameTypes = item.Split(new[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                    if (nameTypes.Length > 1)
+                    {
+                        xamarinFormsStyle.BasedOn = nameTypes[1].Replace("\"", string.Empty);
+
+                        item = CleanItemFromTags(item);
+                        sourceStyle = sourceStyle.Replace(item, string.Empty);
+                    }
+                }
                 else
                 {
                     if (!item.Contains("=") || keys.Any(k => item.ToLower().Contains(k)))
@@ -176,6 +187,7 @@ namespace StyleConverterApp
 
         private void GetStyleSource(ref string sourceStyle, ref List<StyleSetter> setters, string item)
         {
+            
             var valueItems = new string[2];
             var styleItems = item.Split(new char[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries);
             if (styleItems.Length > 2)
@@ -223,7 +235,7 @@ namespace StyleConverterApp
 
         private string CleanItemFromTags(string item)
         {
-            item = item.Replace("/>", string.Empty).Replace(">", string.Empty).Replace("\" \"", "\"");
+            item = item.Replace("/>", string.Empty).Replace(">\"", string.Empty).Replace(">", string.Empty).Replace("\" \"", "\"");
             return item;
         }
 

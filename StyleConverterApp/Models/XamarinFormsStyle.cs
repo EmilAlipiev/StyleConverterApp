@@ -15,12 +15,14 @@ namespace StyleConverterApp.Models
     [System.Xml.Serialization.XmlRootAttribute(Namespace = "", IsNullable = false)]
     public partial class Style
     {
-
+       
         private StyleSetter[] setterField;
 
         private string keyField;
 
         private string targetTypeField;
+
+        private string basedOnField;
 
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute("Setter")]
@@ -61,6 +63,20 @@ namespace StyleConverterApp.Models
             set
             {
                 this.targetTypeField = value;
+            }
+        }
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public string BasedOn
+        {
+            get
+            {
+                return this.basedOnField;
+            }
+            set
+            {
+                this.basedOnField = value;
             }
         }
     }

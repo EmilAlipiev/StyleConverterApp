@@ -61,6 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\AndroidInlineStyle.cs" />
     <Compile Include="Models\AndroidStyle.cs" />
     <Compile Include="Models\Label.cs" />
     <Compile Include="Models\XamarinFormsStyle.cs" />

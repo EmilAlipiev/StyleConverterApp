@@ -41,45 +41,65 @@ namespace StyleConverterApp
             string targetType = "";
 
 
-            if (isAndroidStyle = sourceStyle.ToLower().StartsWith("<style"))
+            if (isAndroidStyle = sourceStyle.ToLower().Contains("android:"))
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(style));
-                style androidStyle;
+                if (isAndroidStyle = sourceStyle.ToLower().StartsWith("style"))
+                {
+                    XmlSerializer serializer = new XmlSerializer(typeof(style));
+                    style androidStyle;
 
-                using (TextReader reader = new StringReader(sourceStyle))
-                {
-                    androidStyle = (style)serializer.Deserialize(reader);
-                }
-                key = androidStyle.name;
-                switch (androidStyle.parent)
-                {
-                    case "@style/Text":
-                        targetType = "Label";
-                        break;
-                    default:
-                        break;
-                }
-
-                xamarinFormsStyle = new Style()
-                {
-                    Key = txtName.Text.Length > 0 ? txtName.Text : key,
-                    TargetType = targetType
-                };
-
-                if (androidStyle.item?.Length > 0)
-                {
-                    var setters = new List<StyleSetter>();
-                    foreach (var item in androidStyle.item)
+                    using (TextReader reader = new StringReader(sourceStyle))
                     {
-                        setters.Add(new StyleSetter()
-                        {
-                            Property = GetProperty(item.name),
-                            Value = GetValue(item.Value, item.name)
-                        });
+                        androidStyle = (style)serializer.Deserialize(reader);
                     }
-                    xamarinFormsStyle.Setter = setters.ToArray();
-                }
+                    key = androidStyle.name;
+                    switch (androidStyle.parent)
+                    {
+                        case "@style/Text":
+                            targetType = "Label";
+                            break;
+                        default:
+                            break;
+                    }
 
+                    DefineXamarinFormsStyle();
+
+                    if (androidStyle.item?.Length > 0)
+                    {
+                        var setters = new List<StyleSetter>();
+                        foreach (var item in androidStyle.item)
+                        {
+                            GetAndroidStyle(setters, item.name, item.Value);
+                        }
+                        xamarinFormsStyle.Setter = setters.ToArray();
+                    }
+                }
+                else
+                {
+                    var items = sourceStyle.Split(new char[0], StringSplitOptions.RemoveEmptyEntries).ToList();
+                    if (items?.Count > 2)
+                    {
+                        var setters = new List<StyleSetter>();
+
+                        targetType = GetTargetTypeFromAndroid(items[0]);
+                        DefineXamarinFormsStyle();
+
+                        items.RemoveAt(0);
+                        items.RemoveAt(items.Count - 1);
+                        foreach (var item in items)
+                        {
+                            var nameValue = item.Split(new[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                            if (nameValue.Length > 1)
+                            {
+                                string value = nameValue[1].Replace("\"", "");
+
+                                GetAndroidStyle(setters, nameValue[0], value);
+                            }
+                        }
+
+                        xamarinFormsStyle.Setter = setters.ToArray();
+                    }
+                }
             }
             else
             {
@@ -156,7 +176,7 @@ namespace StyleConverterApp
                         item = CleanItemFromTags(item);
                         sourceStyle = sourceStyle.Replace(item, string.Empty);
                     }
-                }
+                }              
                 else
                 {
                     if (!item.Contains("=") || keys.Any(k => item.ToLower().Contains(k)))
@@ -183,11 +203,38 @@ namespace StyleConverterApp
                     targetType = GetTargetTypeAndSetters(subItem, keys, ref setters);
                 }
             }
+
+            void DefineXamarinFormsStyle() => xamarinFormsStyle = new Style()
+            {
+                Key = txtName.Text.Length > 0 ? txtName.Text : key,
+                TargetType = targetType
+            };
+        }
+
+        private string GetTargetTypeFromAndroid(string androidType)
+        {
+            androidType = androidType.Replace("<", "");
+            switch (androidType)
+            {
+                case "TextView":
+                    return "Label";
+                default:
+                    return "Label";
+            }
+        }
+
+        private void GetAndroidStyle(List<StyleSetter> setters, string name, string value)
+        {
+            setters.Add(new StyleSetter()
+            {
+                Property = GetProperty(name),
+                Value = GetValue(value, name)
+            });
         }
 
         private void GetStyleSource(ref string sourceStyle, ref List<StyleSetter> setters, string item)
         {
-            
+
             var valueItems = new string[2];
             var styleItems = item.Split(new char[] { '=' }, 2, StringSplitOptions.RemoveEmptyEntries);
             if (styleItems.Length > 2)
@@ -304,6 +351,15 @@ namespace StyleConverterApp
                 value = value.Replace("*", "");
             }
 
+
+            if (value == "wrap_content")       
+                value = "FillAndExpand";
+            else if (value == "fill_parent")
+                value = "Fill";
+            else if (value == "center")
+                value = "Center";
+
+
             return value;
         }
 
@@ -327,6 +383,12 @@ namespace StyleConverterApp
                     return "FontFamily";
                 case "android:textColor":
                     return "TextColor";
+                case "android:gravity":
+                    return "HorizontalTextOptions";
+                case "android:layout_width":
+                    return "HorizontalOptions";
+                case "android:layout_height":
+                    return "VerticalOptions";
                 //case "":
                 //    return "HorizontalOptions";
                 //case "android:layout_width":

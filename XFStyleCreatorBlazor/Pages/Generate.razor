@@ -1,0 +1,73 @@
+﻿@page "/generate"
+
+<h3>Generate</h3>
+@using System.Xml.Serialization;
+@using StyleConverterApp.Models;
+@using StyleConverterShared;
+@using XFStyleCreatorBlazor.Helpers;
+@inject IClipboardService ClipboardService
+
+<EditForm Model="@Model" OnSubmit="@ConvertClick">
+
+    <div class="contrainer">
+
+        <div class="row" style="margin: 20px">
+
+            <div class="col-md-2">
+                <label for="setters">Setter:</label>
+                <select id="setters" @bind="@Model.AndroidStyle">
+                    <option value="">Select Android Style ...</option>
+                    @foreach (var item in AndroidTypes)
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md">
+
+                <input placeholder="Value" @bind-value="@Model.Value" style="margin-left: 20px" />
+
+            </div>
+
+        </div>
+
+        <div class="row" style="margin: 20px">
+            <div class="col-auto">
+                <button type="submit">Generate Style and Copy</button>
+                <span hidden="@NotCopied" style="color: red; font-size:small">copied!!</span>
+            </div>
+        </div>
+        <div class="row" style="margin: 20px">
+            <div class="col-auto">
+                <label style="font-size: medium">@Result</label>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    public String[] AndroidTypes { get; set; } = { "android:textSize", "android:textStyle", "android:letterSpacing", "android:lineSpacingMultiplier", "android:height", "android:fontFamily", "android:textColor", "android:width" };
+    public string? Result { get; set; }
+    public (string Value, string? AndroidStyle) Model = new();
+    private async Task ConvertClick()
+    {
+        if (Model.AndroidStyle == null)
+            return;
+
+        string prp = Model.AndroidStyle;
+        string property = ConverterHelper.GetProperty(prp);
+        string value = ConverterHelper.GetValue(Model.Value, prp);
+
+        Result = ConverterHelper.GetStyleString(new StyleSetter() { Property = property, Value = value });
+        await CopyClick();
+    }
+    public bool NotCopied { get; set; } = true;
+
+    private async Task CopyClick()
+    {
+        await ClipboardService.CopyToClipboard(Result);
+        NotCopied = false;
+    }
+
+}

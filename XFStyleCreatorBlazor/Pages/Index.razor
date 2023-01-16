@@ -1,0 +1,73 @@
+﻿@page "/"
+@using System.Xml.Serialization;
+@using StyleConverterShared;
+@using XFStyleCreatorBlazor.Helpers;
+@inject IClipboardService ClipboardService
+
+<PageTitle>Index</PageTitle>
+
+<h1>Convert Styles</h1>
+
+<EditForm Model="@Model" OnSubmit="ConvertClick">
+
+    <div class="contrainer">
+        <div class="row" style="margin: 20px">
+            <div class="col">
+                <input placeholder="your style name here" @bind-value="@Model.NameStlye" />
+            </div>
+        </div>
+        <div class="row" style="margin: 20px">
+            <div class="col-auto">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"> From:</span>
+                    </div>
+                    <textarea class="form-control" style="min-height: 300px; min-width:400px" aria-label="With textarea" @bind="@Model.TextTotranslate"></textarea>
+                </div>
+            </div>
+            <div class="col-auto">
+                <div class="col-auto">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"> To:</span>
+                        </div>
+                        <textarea class="form-control" style="min-height: 300px; min-width:400px" aria-label="With textarea" @bind=@XfStyleResult></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" style="margin: 20px">
+            <div class="col-auto">
+                <button type="submit">Convert</button>
+            </div>
+            <div class="col-auto">
+                <button type="button" @onclick="CopyClick">Copy To Clipboard</button>
+                <span hidden="@NotCopied" style="color: red; font-size:small">copied!!</span>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+
+@code {
+    (string TextTotranslate, string NameStlye) Model = new();
+    string XfStyleResult { get; set; } = "";
+    private void ConvertClick() => ConvertText(Model);
+    public bool NotCopied { get; set; } = true;
+
+    private async Task CopyClick()
+    {
+        await ClipboardService.CopyToClipboard(XfStyleResult);
+        NotCopied = false;
+    }
+
+    private void ConvertText((string TextTotranslate, string NameStlye) model)
+    {
+        if (model.TextTotranslate.Length >10)
+        {
+            XfStyleResult = ConverterHelper.ConvertText(model.TextTotranslate, model.NameStlye);
+            NotCopied = true;
+        }    
+
+    }
+}

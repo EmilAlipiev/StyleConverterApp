@@ -61,10 +61,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Models\AndroidInlineStyle.cs" />
-    <Compile Include="Models\AndroidStyle.cs" />
-    <Compile Include="Models\Label.cs" />
-    <Compile Include="Models\XamarinFormsStyle.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StyleConverterForm.cs">
@@ -109,6 +105,12 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StyleConverterShared\StyleConverterShared.csproj">
+      <Project>{82a70c5c-d9e5-49f1-bf4c-4ec4bce64794}</Project>
+      <Name>StyleConverterShared</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
